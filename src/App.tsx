@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard'
 import { AssetsView } from './components/AssetsView'
 import { AssetDetailPanel } from './components/AssetDetailPanel'
 import { ScannerView } from './components/ScannerView'
+import { ChecklistView } from './components/ChecklistView'
 import './App.css'
 
 function App() {
@@ -34,7 +35,7 @@ function App() {
               <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
             <span className="header-section">
-              {view === 'dashboard' ? 'Dashboard' : view === 'assets' ? 'Assets' : 'Scanner'}
+              {view === 'dashboard' ? 'Dashboard' : view === 'assets' ? 'Assets' : view === 'scanner' ? 'Scanner' : 'Checklist'}
             </span>
           </div>
           <div className="header-right">
@@ -56,6 +57,9 @@ function App() {
           )}
           {view === 'scanner' && (
             <ScannerView />
+          )}
+          {view === 'checklist' && (
+            <ChecklistView />
           )}
         </main>
       </div>

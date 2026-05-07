@@ -57,7 +57,35 @@ export interface CI {
   notes?: string
 }
 
-export type View = 'dashboard' | 'assets' | 'scanner'
+export type View = 'dashboard' | 'assets' | 'scanner' | 'checklist'
+
+// ── Checklist types ───────────────────────────────────────────────────────────
+
+export type CheckCategory =
+  | 'Vulnerability Management'
+  | 'Identity & Access'
+  | 'Network Security'
+  | 'Endpoint Security'
+  | 'Data Protection'
+  | 'Incident Response'
+  | 'Compliance'
+  | 'Asset Management'
+
+export type CheckPriority = 'critical' | 'high' | 'medium' | 'low'
+export type CheckStatus = 'passed' | 'failed' | 'warning' | 'in-progress' | 'na'
+
+export interface CheckItem {
+  id: string
+  title: string
+  description: string
+  category: CheckCategory
+  priority: CheckPriority
+  status: CheckStatus
+  owner: string
+  frameworks: string[]
+  dueDate?: string
+  notes?: string
+}
 
 // ── Scanner types ─────────────────────────────────────────────────────────────
 

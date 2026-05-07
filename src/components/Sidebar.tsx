@@ -67,6 +67,17 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
           </svg>
           Scanner
         </button>
+        <button
+          className={`nav-item ${view === 'checklist' ? 'active' : ''}`}
+          onClick={() => onNavigate('checklist')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M5 8h14M5 12h4M5 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          Checklist
+        </button>
       </nav>
 
       <div className="sidebar-footer">
