@@ -228,7 +228,7 @@ export const initialChecks: CheckItem[] = [
     priority: 'medium',
     status: 'warning',
     owner: 'Frank Lee',
-    frameworks: ['CIS 13.6', 'ISO 27001 A.8.3'],
+    frameworks: ['CIS 13.7', 'ISO 27001 A.8.3'],
     dueDate: '2026-06-01',
     notes: 'Policy exists but enforcement gap on Linux endpoints in SOC.',
   },
