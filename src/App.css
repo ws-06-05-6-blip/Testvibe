@@ -1822,3 +1822,83 @@
   thead  { display: table-header-group; }
   tr     { page-break-inside: avoid; }
 }
+
+/* ── Light theme overrides for hardcoded colours ── */
+
+/* Hover/focus borders that reference a dark-only hex */
+[data-theme="light"] .stat-card:hover        { border-color: #94a3b8; }
+[data-theme="light"] .filter-select:hover,
+[data-theme="light"] .filter-select:focus    { border-color: #94a3b8; }
+[data-theme="light"] .profile-card:hover     { border-color: #94a3b8; }
+
+/* Sidebar: slight shadow instead of a border-only look */
+[data-theme="light"] .sidebar {
+  box-shadow: 1px 0 0 #e2e8f0, 4px 0 12px rgba(15, 23, 42, 0.04);
+}
+
+/* Card depth via shadow (cards are now white-on-light-grey) */
+[data-theme="light"] .table-card,
+[data-theme="light"] .stat-card,
+[data-theme="light"] .filter-bar,
+[data-theme="light"] .checklist-summary,
+[data-theme="light"] .offline-card,
+[data-theme="light"] .new-scan-card {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Table header: needs a tint to distinguish from body rows */
+[data-theme="light"] .data-table th {
+  background: #f8fafc;
+}
+
+/* Nav active: blue-100 bg, blue-700 text */
+[data-theme="light"] .nav-item.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Score yellow is illegible on white */
+[data-theme="light"] .score-yellow                     { color: #b45309; }
+[data-theme="light"] .category-bar-fill.score-yellow   { background: #b45309; }
+
+/* #60a5fa (blue-400) → blue-700 everywhere it appears as text */
+[data-theme="light"] .link-btn         { color: #1d4ed8; }
+[data-theme="light"] .link-btn:hover   { color: #1e40af; }
+[data-theme="light"] .clear-btn        { color: #1d4ed8; border-color: rgba(29,78,216,0.3); background: rgba(29,78,216,0.06); }
+[data-theme="light"] .clear-btn:hover  { background: rgba(29,78,216,0.12); }
+[data-theme="light"] .cve-id           { color: #1d4ed8; }
+[data-theme="light"] .bulk-count       { color: #1d4ed8; }
+
+/* Framework / compliance tags */
+[data-theme="light"] .framework-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+[data-theme="light"] .tag-compliance {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+/* In-progress / scan-running badges */
+[data-theme="light"] .ck-badge-inprogress { background: #dbeafe; color: #1d4ed8; }
+[data-theme="light"] .badge-scan-running  { background: #dbeafe; color: #1d4ed8; }
+
+/* Bulk bar */
+[data-theme="light"] .bulk-bar {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+/* Active filter highlights */
+[data-theme="light"] .ck-sum-active         { background: #dbeafe !important; }
+[data-theme="light"] .category-card-active  { background: #eff6ff; }
+[data-theme="light"] .profile-card.selected { background: #eff6ff; border-color: var(--accent); }
+
+/* stat-card critical/warn accent borders */
+[data-theme="light"] .stat-card-critical { border-color: rgba(220, 38, 38, 0.35); }
+[data-theme="light"] .stat-card-warn     { border-color: rgba(217, 119, 6, 0.35); }
+
+/* badge-neutral text */
+[data-theme="light"] .badge-neutral { color: #475569; }

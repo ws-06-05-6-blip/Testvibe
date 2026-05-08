@@ -32,15 +32,34 @@
 }
 
 [data-theme="light"] {
+  /* Backgrounds */
   --bg-base:    #f1f5f9;
   --bg-surface: #ffffff;
-  --bg-card:    #f8fafc;
-  --bg-hover:   #e2e8f0;
-  --border:        #cbd5e1;
-  --border-subtle: #e2e8f0;
+  --bg-card:    #ffffff;
+  --bg-hover:   #f1f5f9;
+  --border:        #e2e8f0;
+  --border-subtle: #f1f5f9;
+
+  /* Text — all three tiers need contrast on white */
   --text-primary:   #0f172a;
-  --text-secondary: #334155;
-  --text-muted:     #94a3b8;
+  --text-secondary: #475569;
+  --text-muted:     #64748b;
+
+  /* Semantic — darker shades so they read on light bg */
+  --crit:    #dc2626;
+  --crit-bg: #fef2f2;
+  --high:    #ea580c;
+  --high-bg: #fff7ed;
+  --med:     #d97706;
+  --med-bg:  #fffbeb;
+  --low:     #059669;
+  --low-bg:  #ecfdf5;
+
+  /* Environment badges */
+  --prod-color: #2563eb;  --prod-bg: #eff6ff;
+  --stg-color:  #9333ea;  --stg-bg:  #faf5ff;
+  --dev-color:  #64748b;  --dev-bg:  #f8fafc;
+  --dr-color:   #0891b2;  --dr-bg:   #ecfeff;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
