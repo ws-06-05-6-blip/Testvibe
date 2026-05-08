@@ -31,6 +31,18 @@
   --dr-bg: rgba(6, 182, 212, 0.12);
 }
 
+[data-theme="light"] {
+  --bg-base:    #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-card:    #f8fafc;
+  --bg-hover:   #e2e8f0;
+  --border:        #cbd5e1;
+  --border-subtle: #e2e8f0;
+  --text-primary:   #0f172a;
+  --text-secondary: #334155;
+  --text-muted:     #94a3b8;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
