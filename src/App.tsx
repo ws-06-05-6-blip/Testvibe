@@ -101,7 +101,7 @@ function App() {
         </main>
       </div>
       {selectedCI && (
-        <AssetDetailPanel ci={selectedCI} onClose={handleClosePanel} />
+        <AssetDetailPanel ci={selectedCI} onClose={handleClosePanel} onSelect={handleSelect} />
       )}
     </div>
   )

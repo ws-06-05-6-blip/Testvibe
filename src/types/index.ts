@@ -46,8 +46,13 @@ export interface CI {
   manufacturer?: string
   model?: string
   os?: string
+  softwareVersion?: string
+  serialNumber?: string
+  assetTag?: string
+  warrantyExpiry?: string
   location: string
   lastSeen: string
+  lastVulnScan?: string
   patchStatus: PatchStatus
   vulnerabilities: VulnCount
   compliance: string[]

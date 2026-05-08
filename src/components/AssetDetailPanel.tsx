@@ -5,9 +5,19 @@ import { CriticalityBadge, StatusBadge, EnvironmentBadge, PatchBadge, Badge } fr
 interface AssetDetailPanelProps {
   ci: CI
   onClose: () => void
+  onSelect: (ci: CI) => void
 }
 
-export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
+function warrantyCls(expiry: string): string {
+  const d = new Date(expiry)
+  const now = new Date()
+  const soon = new Date(); soon.setMonth(soon.getMonth() + 6)
+  if (d < now) return 'due-overdue'
+  if (d < soon) return 'warranty-soon'
+  return ''
+}
+
+export function AssetDetailPanel({ ci, onClose, onSelect }: AssetDetailPanelProps) {
   const dependencies = ci.dependencies
     .map(id => mockCIs.find(c => c.id === id))
     .filter((c): c is CI => c !== undefined)
@@ -20,10 +30,13 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
     ci.vulnerabilities.medium +
     ci.vulnerabilities.low
 
+  const isHardware = ci.category === 'Hardware' || ci.category === 'Network'
+
   return (
     <>
       <div className="panel-overlay" onClick={onClose} />
       <aside className="panel">
+        {/* Header */}
         <div className="panel-header">
           <div className="panel-title-row">
             <div>
@@ -44,6 +57,7 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
           </div>
         </div>
 
+        {/* Alert note */}
         {ci.notes && (
           <div className="panel-notes">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
@@ -54,25 +68,63 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
           </div>
         )}
 
+        {/* Identity & Location */}
         <div className="panel-section">
-          <h3 className="panel-section-title">Details</h3>
+          <h3 className="panel-section-title">Identity &amp; Location</h3>
           <dl className="detail-grid">
-            <dt>Asset ID</dt><dd className="mono">{ci.id}</dd>
-            <dt>Category</dt><dd>{ci.category}</dd>
+            <dt>Asset ID</dt>    <dd className="mono">{ci.id}</dd>
+            {ci.assetTag      && <><dt>Asset Tag</dt>    <dd className="mono">{ci.assetTag}</dd></>}
+            {ci.serialNumber  && <><dt>Serial No.</dt>   <dd className="mono">{ci.serialNumber}</dd></>}
+            <dt>Category</dt>   <dd>{ci.category}</dd>
             <dt>Classification</dt><dd>{ci.classification}</dd>
-            <dt>Location</dt><dd>{ci.location}</dd>
+            <dt>Location</dt>   <dd>{ci.location}</dd>
             {ci.ip && <><dt>IP Address</dt><dd className="mono">{ci.ip}</dd></>}
-            {ci.manufacturer && <><dt>Manufacturer</dt><dd>{ci.manufacturer}</dd></>}
-            {ci.model && <><dt>Model</dt><dd>{ci.model}</dd></>}
-            {ci.os && <><dt>OS / Version</dt><dd>{ci.os}</dd></>}
-            <dt>Owner</dt><dd>{ci.owner}</dd>
-            <dt>Team</dt><dd>{ci.team}</dd>
-            <dt>Last Seen</dt><dd>{ci.lastSeen}</dd>
-            <dt>Last Updated</dt><dd>{ci.lastUpdated}</dd>
-            <dt>Patch Status</dt><dd><PatchBadge value={ci.patchStatus} /></dd>
           </dl>
         </div>
 
+        {/* Infrastructure (hardware/network only) */}
+        {isHardware && (ci.manufacturer || ci.model || ci.os || ci.softwareVersion) && (
+          <div className="panel-section">
+            <h3 className="panel-section-title">Infrastructure</h3>
+            <dl className="detail-grid">
+              {ci.manufacturer    && <><dt>Manufacturer</dt>    <dd>{ci.manufacturer}</dd></>}
+              {ci.model           && <><dt>Model</dt>           <dd>{ci.model}</dd></>}
+              {ci.os              && <><dt>OS / Firmware</dt>   <dd>{ci.os}</dd></>}
+              {ci.softwareVersion && <><dt>Software</dt>        <dd>{ci.softwareVersion}</dd></>}
+            </dl>
+          </div>
+        )}
+
+        {/* Cloud / SaaS software */}
+        {!isHardware && ci.softwareVersion && (
+          <div className="panel-section">
+            <h3 className="panel-section-title">Service</h3>
+            <dl className="detail-grid">
+              <dt>Version / Tier</dt><dd>{ci.softwareVersion}</dd>
+            </dl>
+          </div>
+        )}
+
+        {/* Lifecycle & Ownership */}
+        <div className="panel-section">
+          <h3 className="panel-section-title">Lifecycle &amp; Ownership</h3>
+          <dl className="detail-grid">
+            <dt>Owner</dt>        <dd>{ci.owner}</dd>
+            <dt>Team</dt>         <dd>{ci.team}</dd>
+            <dt>Patch Status</dt> <dd><PatchBadge value={ci.patchStatus} /></dd>
+            <dt>Last Seen</dt>    <dd>{ci.lastSeen}</dd>
+            {ci.lastVulnScan && (
+              <><dt>Last Vuln Scan</dt><dd>{ci.lastVulnScan}</dd></>
+            )}
+            <dt>Last Updated</dt> <dd>{ci.lastUpdated}</dd>
+            {ci.warrantyExpiry && (
+              <><dt>Warranty Expiry</dt>
+                <dd className={warrantyCls(ci.warrantyExpiry)}>{ci.warrantyExpiry}</dd></>
+            )}
+          </dl>
+        </div>
+
+        {/* Vulnerabilities */}
         <div className="panel-section">
           <h3 className="panel-section-title">
             Vulnerabilities
@@ -98,6 +150,7 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
           </div>
         </div>
 
+        {/* Compliance */}
         {ci.compliance.length > 0 && (
           <div className="panel-section">
             <h3 className="panel-section-title">Compliance Frameworks</h3>
@@ -109,17 +162,17 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
           </div>
         )}
 
+        {/* Tags */}
         {ci.tags.length > 0 && (
           <div className="panel-section">
             <h3 className="panel-section-title">Tags</h3>
             <div className="tag-list">
-              {ci.tags.map(t => (
-                <span key={t} className="tag">{t}</span>
-              ))}
+              {ci.tags.map(t => <span key={t} className="tag">{t}</span>)}
             </div>
           </div>
         )}
 
+        {/* Dependencies */}
         {dependencies.length > 0 && (
           <div className="panel-section">
             <h3 className="panel-section-title">
@@ -128,15 +181,21 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
             </h3>
             <div className="rel-list">
               {dependencies.map(dep => (
-                <div key={dep.id} className="rel-item">
-                  <div className="rel-name">{dep.displayName}</div>
-                  <div className="rel-meta">{dep.type} · {dep.name}</div>
-                </div>
+                <button key={dep.id} className="rel-item rel-item-btn" onClick={() => onSelect(dep)}>
+                  <div className="rel-item-header">
+                    <span className="rel-name">{dep.displayName}</span>
+                    <CriticalityBadge value={dep.criticality} />
+                  </div>
+                  <div className="rel-meta">
+                    {dep.type} · {dep.name}{dep.ip && ` · ${dep.ip}`}
+                  </div>
+                </button>
               ))}
             </div>
           </div>
         )}
 
+        {/* Dependents */}
         {dependents.length > 0 && (
           <div className="panel-section">
             <h3 className="panel-section-title">
@@ -145,10 +204,15 @@ export function AssetDetailPanel({ ci, onClose }: AssetDetailPanelProps) {
             </h3>
             <div className="rel-list">
               {dependents.map(dep => (
-                <div key={dep.id} className="rel-item">
-                  <div className="rel-name">{dep.displayName}</div>
-                  <div className="rel-meta">{dep.type} · {dep.name}</div>
-                </div>
+                <button key={dep.id} className="rel-item rel-item-btn" onClick={() => onSelect(dep)}>
+                  <div className="rel-item-header">
+                    <span className="rel-name">{dep.displayName}</span>
+                    <CriticalityBadge value={dep.criticality} />
+                  </div>
+                  <div className="rel-meta">
+                    {dep.type} · {dep.name}{dep.ip && ` · ${dep.ip}`}
+                  </div>
+                </button>
               ))}
             </div>
           </div>

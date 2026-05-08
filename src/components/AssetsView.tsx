@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CI, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory } from '../types'
+import type { CI, VulnCount, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory } from '../types'
 import { mockCIs } from '../data/mockData'
 import { CriticalityBadge, StatusBadge, EnvironmentBadge, PatchBadge } from './Badge'
 
@@ -9,6 +9,44 @@ interface AssetsViewProps {
 
 const ALL = 'All'
 
+type SortDir = 'asc' | 'desc'
+type SortCol = 'displayName' | 'type' | 'environment' | 'criticality' | 'status' | 'patchStatus' | 'risk' | 'owner' | 'lastSeen'
+
+const ENV_ORDER: Record<Environment, number> = { Production: 4, DR: 3, Staging: 2, Development: 1 }
+const CRIT_ORDER: Record<Criticality, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 }
+const STATUS_ORDER: Record<AssetStatus, number> = { Active: 4, Maintenance: 3, Inactive: 2, Decommissioned: 1 }
+const PATCH_ORDER: Record<PatchStatus, number> = { 'Critical patches': 4, 'Patches available': 3, Unknown: 2, 'Up to date': 1 }
+
+function riskScore(v: VulnCount): number {
+  return v.critical * 1000 + v.high * 100 + v.medium * 10 + v.low
+}
+
+function riskLabel(v: VulnCount): string {
+  if (v.critical > 0) return 'critical'
+  if (v.high > 0) return 'high'
+  if (v.medium > 0) return 'medium'
+  if (v.low > 0) return 'low'
+  return 'none'
+}
+
+function sortCIs(list: CI[], col: SortCol, dir: SortDir): CI[] {
+  return [...list].sort((a, b) => {
+    let cmp = 0
+    switch (col) {
+      case 'displayName': cmp = a.displayName.localeCompare(b.displayName); break
+      case 'type':        cmp = a.type.localeCompare(b.type); break
+      case 'environment': cmp = ENV_ORDER[a.environment] - ENV_ORDER[b.environment]; break
+      case 'criticality': cmp = CRIT_ORDER[a.criticality] - CRIT_ORDER[b.criticality]; break
+      case 'status':      cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status]; break
+      case 'patchStatus': cmp = PATCH_ORDER[a.patchStatus] - PATCH_ORDER[b.patchStatus]; break
+      case 'risk':        cmp = riskScore(a.vulnerabilities) - riskScore(b.vulnerabilities); break
+      case 'owner':       cmp = a.owner.localeCompare(b.owner); break
+      case 'lastSeen':    cmp = a.lastSeen.localeCompare(b.lastSeen); break
+    }
+    return dir === 'asc' ? cmp : -cmp
+  })
+}
+
 export function AssetsView({ onSelect }: AssetsViewProps) {
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<AssetCategory | typeof ALL>(ALL)
@@ -16,6 +54,13 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
   const [filterEnvironment, setFilterEnvironment] = useState<Environment | typeof ALL>(ALL)
   const [filterStatus, setFilterStatus] = useState<AssetStatus | typeof ALL>(ALL)
   const [filterPatch, setFilterPatch] = useState<PatchStatus | typeof ALL>(ALL)
+  const [sortCol, setSortCol] = useState<SortCol>('criticality')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  function handleSort(col: SortCol) {
+    if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+  }
 
   const filtered = mockCIs.filter(ci => {
     if (filterCategory !== ALL && ci.category !== filterCategory) return false
@@ -32,11 +77,15 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
         ci.owner.toLowerCase().includes(q) ||
         ci.team.toLowerCase().includes(q) ||
         (ci.ip?.toLowerCase().includes(q) ?? false) ||
+        (ci.serialNumber?.toLowerCase().includes(q) ?? false) ||
+        (ci.assetTag?.toLowerCase().includes(q) ?? false) ||
         ci.tags.some(t => t.toLowerCase().includes(q))
       )
     }
     return true
   })
+
+  const sorted = sortCIs(filtered, sortCol, sortDir)
 
   function resetFilters() {
     setSearch('')
@@ -73,60 +122,40 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
           <input
             className="search-input"
             type="text"
-            placeholder="Search by name, type, owner, IP, tag..."
+            placeholder="Search by name, type, owner, IP, asset tag, serial..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
         <div className="filter-selects">
-          <select
-            className="filter-select"
-            value={filterCategory}
-            onChange={e => setFilterCategory(e.target.value as AssetCategory | typeof ALL)}
-          >
+          <select className="filter-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value as AssetCategory | typeof ALL)}>
             <option value={ALL}>All Categories</option>
             <option value="Hardware">Hardware</option>
             <option value="Network">Network</option>
             <option value="Cloud">Cloud</option>
           </select>
-          <select
-            className="filter-select"
-            value={filterCriticality}
-            onChange={e => setFilterCriticality(e.target.value as Criticality | typeof ALL)}
-          >
+          <select className="filter-select" value={filterCriticality} onChange={e => setFilterCriticality(e.target.value as Criticality | typeof ALL)}>
             <option value={ALL}>All Criticality</option>
             <option value="Critical">Critical</option>
             <option value="High">High</option>
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
-          <select
-            className="filter-select"
-            value={filterEnvironment}
-            onChange={e => setFilterEnvironment(e.target.value as Environment | typeof ALL)}
-          >
+          <select className="filter-select" value={filterEnvironment} onChange={e => setFilterEnvironment(e.target.value as Environment | typeof ALL)}>
             <option value={ALL}>All Environments</option>
             <option value="Production">Production</option>
             <option value="Staging">Staging</option>
             <option value="Development">Development</option>
             <option value="DR">DR</option>
           </select>
-          <select
-            className="filter-select"
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value as AssetStatus | typeof ALL)}
-          >
+          <select className="filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value as AssetStatus | typeof ALL)}>
             <option value={ALL}>All Statuses</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
             <option value="Maintenance">Maintenance</option>
             <option value="Decommissioned">Decommissioned</option>
           </select>
-          <select
-            className="filter-select"
-            value={filterPatch}
-            onChange={e => setFilterPatch(e.target.value as PatchStatus | typeof ALL)}
-          >
+          <select className="filter-select" value={filterPatch} onChange={e => setFilterPatch(e.target.value as PatchStatus | typeof ALL)}>
             <option value={ALL}>All Patch Status</option>
             <option value="Up to date">Up to date</option>
             <option value="Patches available">Patches available</option>
@@ -134,9 +163,7 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
             <option value="Unknown">Unknown</option>
           </select>
           {hasFilters && (
-            <button className="clear-btn" onClick={resetFilters}>
-              Clear
-            </button>
+            <button className="clear-btn" onClick={resetFilters}>Clear</button>
           )}
         </div>
       </div>
@@ -145,35 +172,35 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
         <table className="data-table assets-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Env</th>
-              <th>Criticality</th>
-              <th>Status</th>
-              <th>Patch Status</th>
-              <th>Vulns</th>
-              <th>Owner</th>
-              <th>Last Seen</th>
+              <SortTh col="displayName" label="Name"        active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="type"        label="Type"        active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="environment" label="Env"         active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="criticality" label="Criticality" active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="status"      label="Status"      active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="patchStatus" label="Patch"       active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="risk"        label="Risk"        active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="owner"       label="Owner"       active={sortCol} dir={sortDir} onSort={handleSort} />
+              <SortTh col="lastSeen"    label="Last Seen"   active={sortCol} dir={sortDir} onSort={handleSort} />
             </tr>
           </thead>
           <tbody>
-            {filtered.map(ci => (
+            {sorted.map(ci => (
               <tr key={ci.id} onClick={() => onSelect(ci)}>
                 <td>
                   <div className="ci-name">{ci.displayName}</div>
-                  <div className="ci-hostname">{ci.name}</div>
+                  <div className="ci-hostname">{ci.name}{ci.assetTag && <span className="ci-asset-tag">{ci.assetTag}</span>}</div>
                 </td>
                 <td className="text-secondary">{ci.type}</td>
                 <td><EnvironmentBadge value={ci.environment} /></td>
                 <td><CriticalityBadge value={ci.criticality} /></td>
                 <td><StatusBadge value={ci.status} /></td>
                 <td><PatchBadge value={ci.patchStatus} /></td>
-                <td><VulnCells vulns={ci.vulnerabilities} /></td>
+                <td><RiskCell vulns={ci.vulnerabilities} /></td>
                 <td className="text-secondary">{ci.owner}</td>
                 <td className="text-secondary">{ci.lastSeen}</td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <tr>
                 <td colSpan={9} className="empty-row">
                   No assets match the current filters.
@@ -187,15 +214,32 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
   )
 }
 
-function VulnCells({ vulns }: { vulns: { critical: number; high: number; medium: number; low: number } }) {
-  const hasAny = vulns.critical > 0 || vulns.high > 0 || vulns.medium > 0 || vulns.low > 0
-  if (!hasAny) return <span className="text-muted">—</span>
+function SortTh({ col, label, active, dir, onSort }: {
+  col: SortCol
+  label: string
+  active: SortCol
+  dir: SortDir
+  onSort: (col: SortCol) => void
+}) {
+  const isActive = col === active
   return (
-    <span className="vuln-row">
-      {vulns.critical > 0 && <span className="vc vc-c">C:{vulns.critical}</span>}
-      {vulns.high > 0 && <span className="vc vc-h">H:{vulns.high}</span>}
-      {vulns.medium > 0 && <span className="vc vc-m">M:{vulns.medium}</span>}
-      {vulns.low > 0 && <span className="vc vc-l">L:{vulns.low}</span>}
-    </span>
+    <th className={`th-sortable${isActive ? ' th-sorted' : ''}`} onClick={() => onSort(col)}>
+      {label}
+      <span className="sort-icon">
+        {isActive
+          ? (dir === 'asc'
+              ? <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M4 1l3.5 6H.5L4 1z"/></svg>
+              : <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M4 7L.5 1h7L4 7z"/></svg>)
+          : <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor" opacity="0.35"><path d="M4 0l3 4H1L4 0z"/><path d="M4 10L1 6h6l-3 4z"/></svg>
+        }
+      </span>
+    </th>
   )
+}
+
+function RiskCell({ vulns }: { vulns: VulnCount }) {
+  const level = riskLabel(vulns)
+  if (level === 'none') return <span className="text-muted">—</span>
+  const cls = { critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[level]
+  return <span className={`badge ${cls}`}>{level}</span>
 }

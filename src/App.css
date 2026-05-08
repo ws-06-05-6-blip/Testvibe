@@ -1823,6 +1823,73 @@
   tr     { page-break-inside: avoid; }
 }
 
+/* ── Sortable table headers ──────────────────────── */
+
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.th-sortable:hover { color: var(--text-secondary); }
+.th-sorted { color: var(--text-primary); }
+
+.sort-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  vertical-align: middle;
+  color: var(--text-muted);
+}
+
+.th-sorted .sort-icon { color: var(--accent); }
+
+/* ── Asset tag chip (sub-row of CI name) ─────────── */
+
+.ci-asset-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+/* ── Warranty expiring soon ──────────────────────── */
+
+.warranty-soon {
+  font-size: 12px;
+  color: var(--med);
+  font-family: ui-monospace, monospace;
+}
+
+/* ── Clickable relationship items ────────────────── */
+
+.rel-item-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rel-item-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.rel-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
 /* ── Bottom nav (mobile only) ────────────────────── */
 
 .bottom-nav { display: none; }
