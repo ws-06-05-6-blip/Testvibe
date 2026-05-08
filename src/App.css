@@ -1823,6 +1823,101 @@
   tr     { page-break-inside: avoid; }
 }
 
+/* ── Bottom nav (mobile only) ────────────────────── */
+
+.bottom-nav { display: none; }
+
+/* ── Mobile responsive ───────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Hide sidebar, show bottom nav */
+  .sidebar { display: none; }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px;
+    flex: 1;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .bottom-nav-item:hover { background: var(--bg-hover); }
+
+  .bottom-nav-item.active { color: var(--accent); }
+
+  /* Tighten content padding; leave room for bottom nav */
+  .content {
+    padding: 16px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+
+  /* Header */
+  .header { padding: 0 16px; }
+  .header-date { display: none; }
+
+  /* Stats grid: 2 × 2 */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .scan-stats  { grid-template-columns: repeat(2, 1fr); }
+
+  /* Dashboard: single column */
+  .dashboard-grid { grid-template-columns: 1fr; }
+
+  /* Category cards: 2 columns */
+  .category-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* Tables: allow horizontal scroll */
+  .table-card { overflow-x: auto; }
+
+  /* Checklist header: stack score below title */
+  .checklist-header { flex-direction: column; gap: 12px; }
+  .checklist-header-right { align-self: flex-start; }
+
+  /* Checklist edit-panel form: single column */
+  .ck-form-grid { grid-template-columns: 1fr; }
+
+  /* Bulk/filter bars: wrap tightly */
+  .filter-selects { gap: 6px; }
+
+  /* Detail panel: full screen on mobile */
+  .panel { width: 100%; left: 0; border-left: none; border-top: 1px solid var(--border); }
+
+  /* Vuln blocks: 2 × 2 */
+  .vuln-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Host detail expanded sections: stack */
+  .host-detail-sections { grid-template-columns: 1fr; }
+
+  /* Scanner profile grid: 1 per row */
+  .profile-grid { grid-template-columns: 1fr; }
+
+  /* New scan card: full width */
+  .new-scan-card { max-width: 100%; }
+
+  /* Page title area */
+  .page-header { flex-wrap: wrap; }
+}
+
 /* ── Light theme overrides for hardcoded colours ── */
 
 /* Hover/focus borders that reference a dark-only hex */
@@ -1970,6 +2065,11 @@
 
 /* Selected row: bump contrast on white background */
 [data-theme="light"] .check-row-selected td { background: #eff6ff; }
+
+/* Bottom nav lift on light bg */
+[data-theme="light"] .bottom-nav {
+  box-shadow: 0 -1px 3px rgba(15, 23, 42, 0.07);
+}
 
 /* ── Scanner ─────────────────────────────────────── */
 

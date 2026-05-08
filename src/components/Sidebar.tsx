@@ -6,6 +6,53 @@ interface SidebarProps {
   onNavigate: (view: View) => void
 }
 
+const NAV_ITEMS: { view: View; label: string; icon: React.ReactNode }[] = [
+  {
+    view: 'dashboard',
+    label: 'Dashboard',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+  {
+    view: 'assets',
+    label: 'Assets',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="3" width="20" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="2" y="10" width="20" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="2" y="17" width="20" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+  {
+    view: 'scanner',
+    label: 'Scanner',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M11 8v6M8 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    view: 'checklist',
+    label: 'Checklist',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+]
+
 export function Sidebar({ view, onNavigate }: SidebarProps) {
   const criticalCount = mockCIs.filter(ci => ci.criticality === 'Critical').length
   const actionRequired = mockCIs.filter(
@@ -13,6 +60,7 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
   ).length
 
   return (
+    <>
     <aside className="sidebar">
       <div className="sidebar-brand">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="brand-icon">
@@ -97,5 +145,19 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
         )}
       </div>
     </aside>
+
+    <nav className="bottom-nav">
+      {NAV_ITEMS.map(item => (
+        <button
+          key={item.view}
+          className={`bottom-nav-item ${view === item.view ? 'active' : ''}`}
+          onClick={() => onNavigate(item.view)}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+    </>
   )
 }
