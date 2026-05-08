@@ -6,14 +6,6 @@ const STORAGE_KEY = 'secops-checklist-state'
 
 const WEIGHTS: Record<CheckPriority, number> = { critical: 4, high: 3, medium: 2, low: 1 }
 
-const STATUS_LABELS: Record<CheckStatus, string> = {
-  passed: 'Passed',
-  failed: 'Failed',
-  warning: 'Warning',
-  'in-progress': 'In Progress',
-  na: 'N/A',
-}
-
 const CATEGORIES: CheckCategory[] = [
   'Vulnerability Management',
   'Identity & Access',
@@ -36,8 +28,7 @@ function calcScore(items: CheckItem[]): number {
     else if (item.status === 'warning') earned += w * 0.5
     else if (item.status === 'in-progress') earned += w * 0.25
   }
-  if (max === 0) return 0
-  return Math.round((earned / max) * 100)
+  return max === 0 ? 0 : Math.round((earned / max) * 100)
 }
 
 function scoreColor(score: number): string {
@@ -47,7 +38,7 @@ function scoreColor(score: number): string {
   return 'score-red'
 }
 
-function statusBadgeClass(status: CheckStatus): string {
+function statusWrapClass(status: CheckStatus): string {
   return {
     passed: 'ck-badge-passed',
     failed: 'ck-badge-failed',
@@ -58,34 +49,194 @@ function statusBadgeClass(status: CheckStatus): string {
 }
 
 function priorityBadgeClass(priority: CheckPriority): string {
-  return {
-    critical: 'badge-critical',
-    high: 'badge-high',
-    medium: 'badge-medium',
-    low: 'badge-low',
-  }[priority]
+  return { critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[priority]
 }
 
-interface CategoryStats {
-  total: number
-  passed: number
-  failed: number
-  warning: number
-  inProgress: number
-  na: number
+function generateId(): string {
+  return `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-function categoryStats(items: CheckItem[], category: CheckCategory): CategoryStats {
-  const cats = items.filter(i => i.category === category)
-  return {
-    total: cats.length,
-    passed: cats.filter(i => i.status === 'passed').length,
-    failed: cats.filter(i => i.status === 'failed').length,
-    warning: cats.filter(i => i.status === 'warning').length,
-    inProgress: cats.filter(i => i.status === 'in-progress').length,
-    na: cats.filter(i => i.status === 'na').length,
+// ── Edit / create panel ───────────────────────────────────────────────────────
+
+const BLANK: Omit<CheckItem, 'id'> = {
+  title: '',
+  description: '',
+  category: 'Vulnerability Management',
+  priority: 'medium',
+  status: 'in-progress',
+  owner: '',
+  frameworks: [],
+}
+
+interface PanelProps {
+  item: CheckItem | null
+  onSave: (item: CheckItem) => void
+  onDelete: (id: string) => void
+  onClose: () => void
+}
+
+function EditPanel({ item, onSave, onDelete, onClose }: PanelProps) {
+  const [form, setForm] = useState<Omit<CheckItem, 'id'>>(item ? { ...item } : { ...BLANK })
+  const [fwText, setFwText] = useState(item ? item.frameworks.join(', ') : '')
+  const [confirmDel, setConfirmDel] = useState(false)
+
+  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+    setForm(f => ({ ...f, [k]: v }))
   }
+
+  function handleSave() {
+    if (!form.title.trim()) return
+    onSave({
+      ...form,
+      id: item?.id ?? generateId(),
+      frameworks: fwText.split(',').map(s => s.trim()).filter(Boolean),
+    })
+  }
+
+  return (
+    <>
+      <div className="panel-overlay" onClick={onClose} />
+      <div className="panel">
+        <div className="panel-header">
+          <div className="panel-title-row">
+            <div>
+              <div className="panel-name">{item ? 'Edit control' : 'New control'}</div>
+              {item && <div className="panel-hostname">{item.id}</div>}
+            </div>
+            <button className="close-btn" onClick={onClose}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="panel-section">
+          <div className="ck-form">
+            <div className="form-row">
+              <label className="form-label">
+                Title <span className="ck-required">*</span>
+              </label>
+              <input
+                className="form-input"
+                value={form.title}
+                onChange={e => set('title', e.target.value)}
+                placeholder="Control title"
+                autoFocus
+              />
+            </div>
+
+            <div className="form-row">
+              <label className="form-label">Description</label>
+              <textarea
+                className="form-input ck-textarea"
+                value={form.description}
+                onChange={e => set('description', e.target.value)}
+                placeholder="What this control verifies and how to assess it"
+                rows={3}
+              />
+            </div>
+
+            <div className="ck-form-grid">
+              <div className="form-row">
+                <label className="form-label">Category</label>
+                <select className="form-input" value={form.category} onChange={e => set('category', e.target.value as CheckCategory)}>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">Priority</label>
+                <select className="form-input" value={form.priority} onChange={e => set('priority', e.target.value as CheckPriority)}>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">Status</label>
+                <select className="form-input" value={form.status} onChange={e => set('status', e.target.value as CheckStatus)}>
+                  <option value="passed">Passed</option>
+                  <option value="failed">Failed</option>
+                  <option value="warning">Warning</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">Owner</label>
+                <input
+                  className="form-input"
+                  value={form.owner}
+                  onChange={e => set('owner', e.target.value)}
+                  placeholder="Person or team"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <label className="form-label">Frameworks</label>
+              <input
+                className="form-input"
+                value={fwText}
+                onChange={e => setFwText(e.target.value)}
+                placeholder="CIS 7.1, NIST CSF ID.RA, PCI-DSS 11.3 (comma-separated)"
+              />
+            </div>
+
+            <div className="form-row">
+              <label className="form-label">Due date</label>
+              <input
+                className="form-input"
+                type="date"
+                value={form.dueDate ?? ''}
+                onChange={e => set('dueDate', e.target.value || undefined)}
+              />
+            </div>
+
+            <div className="form-row">
+              <label className="form-label">Notes</label>
+              <textarea
+                className="form-input ck-textarea"
+                value={form.notes ?? ''}
+                onChange={e => set('notes', e.target.value || undefined)}
+                placeholder="Current status, blockers, context..."
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="ck-panel-footer">
+          <div className="ck-panel-footer-left">
+            {item && (
+              confirmDel
+                ? <>
+                    <span className="ck-del-confirm">Delete this control?</span>
+                    <button className="del-btn-text" onClick={() => { onDelete(item.id); onClose() }}>Confirm</button>
+                    <button className="secondary-btn ck-sm-btn" onClick={() => setConfirmDel(false)}>Cancel</button>
+                  </>
+                : <button className="del-btn-text" onClick={() => setConfirmDel(true)}>Delete</button>
+            )}
+          </div>
+          <div className="form-actions" style={{ margin: 0 }}>
+            <button className="secondary-btn" onClick={onClose}>Cancel</button>
+            <button className="primary-btn" onClick={handleSave} disabled={!form.title.trim()}>
+              {item ? 'Save changes' : 'Add control'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
 }
+
+// ── Main view ─────────────────────────────────────────────────────────────────
+
+type PanelState = false | null | CheckItem // false=closed, null=new, item=editing
 
 export function ChecklistView() {
   const [checks, setChecks] = useState<CheckItem[]>(() => {
@@ -94,20 +245,21 @@ export function ChecklistView() {
       if (saved) {
         const parsed: CheckItem[] = JSON.parse(saved)
         const map = new Map(parsed.map(c => [c.id, c]))
-        return initialChecks.map(c => map.get(c.id) ?? c)
+        return [
+          ...initialChecks.map(c => map.get(c.id) ?? c),
+          ...parsed.filter(c => c.id.startsWith('custom-')),
+        ]
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
     return initialChecks
   })
 
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [draftStatus, setDraftStatus] = useState<CheckStatus>('passed')
-  const [draftNotes, setDraftNotes] = useState('')
+  const [panel, setPanel] = useState<PanelState>(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState<CheckStatus | ''>('')
 
   const [search, setSearch] = useState('')
-  const [filterCategory, setFilterCategory] = useState<string>('')
+  const [filterCat, setFilterCat] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [filterPriority, setFilterPriority] = useState<string>('')
 
@@ -115,37 +267,68 @@ export function ChecklistView() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(checks))
   }, [checks])
 
-  function handleExpand(item: CheckItem) {
-    if (expandedId === item.id) {
-      setExpandedId(null)
-      return
-    }
-    setExpandedId(item.id)
-    setDraftStatus(item.status)
-    setDraftNotes(item.notes ?? '')
+  function handleInlineStatus(id: string, status: CheckStatus) {
+    setChecks(prev => prev.map(c => c.id === id ? { ...c, status } : c))
   }
 
-  function handleSave(id: string) {
+  function handlePanelSave(item: CheckItem) {
     setChecks(prev =>
-      prev.map(c => c.id === id ? { ...c, status: draftStatus, notes: draftNotes || undefined } : c)
+      prev.find(c => c.id === item.id)
+        ? prev.map(c => c.id === item.id ? item : c)
+        : [...prev, item]
     )
-    setExpandedId(null)
+    setPanel(false)
+  }
+
+  function handlePanelDelete(id: string) {
+    setChecks(prev => prev.filter(c => c.id !== id))
+    setSelected(prev => { const n = new Set(prev); n.delete(id); return n })
+  }
+
+  function handleBulkApply() {
+    if (!bulkStatus) return
+    setChecks(prev => prev.map(c => selected.has(c.id) ? { ...c, status: bulkStatus as CheckStatus } : c))
+    setSelected(new Set())
+    setBulkStatus('')
+  }
+
+  function handleResetDefaults() {
+    if (!confirm('Reset all built-in controls to their default status? Custom controls are kept.')) return
+    setChecks(prev => [
+      ...initialChecks,
+      ...prev.filter(c => c.id.startsWith('custom-')),
+    ])
+    setSelected(new Set())
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function toggleSelectAll(ids: string[]) {
+    setSelected(prev =>
+      ids.every(id => prev.has(id)) ? new Set() : new Set(ids)
+    )
   }
 
   const score = calcScore(checks)
 
   const filtered = checks.filter(item => {
-    if (filterCategory && item.category !== filterCategory) return false
+    if (filterCat && item.category !== filterCat) return false
     if (filterStatus && item.status !== filterStatus) return false
     if (filterPriority && item.priority !== filterPriority) return false
     if (search) {
       const q = search.toLowerCase()
-      return item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q)
+      return item.title.toLowerCase().includes(q)
+        || item.description.toLowerCase().includes(q)
+        || item.owner.toLowerCase().includes(q)
     }
     return true
   })
 
-  const hasFilter = search || filterCategory || filterStatus || filterPriority
+  const filteredIds = filtered.map(i => i.id)
+  const allSelected = filteredIds.length > 0 && filteredIds.every(id => selected.has(id))
+  const hasFilter = !!(search || filterCat || filterStatus || filterPriority)
 
   const totalPassed = checks.filter(c => c.status === 'passed').length
   const totalFailed = checks.filter(c => c.status === 'failed').length
@@ -154,67 +337,78 @@ export function ChecklistView() {
 
   return (
     <div className="checklist-view">
-      {/* Page header */}
+      {/* Header */}
       <div className="checklist-header">
         <div className="checklist-title-col">
           <h1 className="page-title">Security Checklist</h1>
-          <p className="page-subtitle">{checks.length} controls across {CATEGORIES.length} categories</p>
+          <p className="page-subtitle">{checks.length} controls · {CATEGORIES.length} categories</p>
         </div>
-        <div className="checklist-score-block">
-          <span className={`checklist-score ${scoreColor(score)}`}>{score}</span>
-          <span className="checklist-score-label">/ 100</span>
+        <div className="checklist-header-right">
+          <div className="checklist-score-block">
+            <span className={`checklist-score ${scoreColor(score)}`}>{score}</span>
+            <span className="checklist-score-label">/ 100</span>
+          </div>
+          <button className="primary-btn ck-add-btn" onClick={() => setPanel(null)}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            Add control
+          </button>
         </div>
       </div>
 
-      {/* Summary row */}
+      {/* Summary bar */}
       <div className="checklist-summary">
-        <div className="ck-sum-item">
-          <span className="ck-sum-count ck-sum-passed">{totalPassed}</span>
-          <span className="ck-sum-label">Passed</span>
-        </div>
-        <div className="ck-sum-item">
-          <span className="ck-sum-count ck-sum-failed">{totalFailed}</span>
-          <span className="ck-sum-label">Failed</span>
-        </div>
-        <div className="ck-sum-item">
-          <span className="ck-sum-count ck-sum-warning">{totalWarning}</span>
-          <span className="ck-sum-label">Warning</span>
-        </div>
-        <div className="ck-sum-item">
-          <span className="ck-sum-count ck-sum-inprogress">{totalInProgress}</span>
-          <span className="ck-sum-label">In Progress</span>
-        </div>
+        {([
+          ['Passed', totalPassed, 'ck-sum-passed'],
+          ['Failed', totalFailed, 'ck-sum-failed'],
+          ['Warning', totalWarning, 'ck-sum-warning'],
+          ['In Progress', totalInProgress, 'ck-sum-inprogress'],
+        ] as const).map(([label, count, cls]) => (
+          <div
+            key={label}
+            className={`ck-sum-item ${filterStatus === label.toLowerCase().replace(' ', '-') ? 'ck-sum-active' : ''}`}
+            onClick={() => setFilterStatus(s => s === label.toLowerCase().replace(' ', '-') ? '' : label.toLowerCase().replace(' ', '-'))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter') setFilterStatus(s => s === label.toLowerCase().replace(' ', '-') ? '' : label.toLowerCase().replace(' ', '-')) }}
+          >
+            <span className={`ck-sum-count ${cls}`}>{count}</span>
+            <span className="ck-sum-label">{label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Category grid */}
+      {/* Category cards */}
       <div className="category-grid">
         {CATEGORIES.map(cat => {
-          const s = categoryStats(checks, cat)
-          const catScore = calcScore(checks.filter(c => c.category === cat))
+          const catItems = checks.filter(c => c.category === cat)
+          const catScore = calcScore(catItems)
+          const passed = catItems.filter(i => i.status === 'passed').length
+          const failed = catItems.filter(i => i.status === 'failed').length
+          const warning = catItems.filter(i => i.status === 'warning').length
+          const inProg = catItems.filter(i => i.status === 'in-progress').length
           return (
             <div
               key={cat}
-              className={`category-card ${filterCategory === cat ? 'category-card-active' : ''}`}
-              onClick={() => setFilterCategory(prev => prev === cat ? '' : cat)}
+              className={`category-card ${filterCat === cat ? 'category-card-active' : ''}`}
+              onClick={() => setFilterCat(p => p === cat ? '' : cat)}
               role="button"
               tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setFilterCategory(prev => prev === cat ? '' : cat) }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setFilterCat(p => p === cat ? '' : cat) }}
             >
               <div className="category-card-top">
                 <span className="category-card-name">{cat}</span>
                 <span className={`category-card-score ${scoreColor(catScore)}`}>{catScore}</span>
               </div>
               <div className="category-mini-counts">
-                <span className="ck-mini-pass">{s.passed}✓</span>
-                {s.failed > 0 && <span className="ck-mini-fail">{s.failed}✗</span>}
-                {s.warning > 0 && <span className="ck-mini-warn">{s.warning}!</span>}
-                {s.inProgress > 0 && <span className="ck-mini-prog">{s.inProgress}↻</span>}
+                <span className="ck-mini-pass">{passed}✓</span>
+                {failed > 0 && <span className="ck-mini-fail">{failed}✗</span>}
+                {warning > 0 && <span className="ck-mini-warn">{warning}!</span>}
+                {inProg > 0 && <span className="ck-mini-prog">{inProg}↻</span>}
               </div>
               <div className="category-bar-track">
-                <div
-                  className={`category-bar-fill ${scoreColor(catScore)}`}
-                  style={{ width: `${catScore}%` }}
-                />
+                <div className={`category-bar-fill ${scoreColor(catScore)}`} style={{ width: `${catScore}%` }} />
               </div>
             </div>
           )
@@ -230,13 +424,13 @@ export function ChecklistView() {
           </svg>
           <input
             className="search-input"
-            placeholder="Search controls..."
+            placeholder="Search controls, owners..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
         <div className="filter-selects">
-          <select className="filter-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+          <select className="filter-select" value={filterCat} onChange={e => setFilterCat(e.target.value)}>
             <option value="">All categories</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -256,123 +450,143 @@ export function ChecklistView() {
             <option value="low">Low</option>
           </select>
           {hasFilter && (
-            <button className="clear-btn" onClick={() => { setSearch(''); setFilterCategory(''); setFilterStatus(''); setFilterPriority('') }}>
+            <button className="clear-btn" onClick={() => { setSearch(''); setFilterCat(''); setFilterStatus(''); setFilterPriority('') }}>
               Clear
             </button>
           )}
           <span className="filter-count">{filtered.length} of {checks.length}</span>
+          <div className="filter-spacer" />
+          <button className="secondary-btn ck-sm-btn" onClick={handleResetDefaults}>Reset defaults</button>
         </div>
       </div>
 
-      {/* Check list */}
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="bulk-bar">
+          <span className="bulk-count">{selected.size} selected</span>
+          <select
+            className="filter-select"
+            value={bulkStatus}
+            onChange={e => setBulkStatus(e.target.value as CheckStatus | '')}
+          >
+            <option value="">Set status…</option>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="warning">Warning</option>
+            <option value="in-progress">In Progress</option>
+            <option value="na">N/A</option>
+          </select>
+          <button className="primary-btn ck-sm-btn" onClick={handleBulkApply} disabled={!bulkStatus}>Apply</button>
+          <button className="secondary-btn ck-sm-btn" onClick={() => setSelected(new Set())}>Clear selection</button>
+        </div>
+      )}
+
+      {/* Table */}
       <div className="checklist-table-card table-card">
         {filtered.length === 0 ? (
-          <div className="empty-row" style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
             No controls match the current filters.
           </div>
         ) : (
           <table className="data-table checklist-table">
             <thead>
               <tr>
+                <th className="ck-col-check">
+                  <input
+                    type="checkbox"
+                    className="ck-checkbox"
+                    checked={allSelected}
+                    onChange={() => toggleSelectAll(filteredIds)}
+                  />
+                </th>
                 <th>Control</th>
                 <th>Category</th>
                 <th>Priority</th>
                 <th>Owner</th>
                 <th>Status</th>
                 <th>Due</th>
+                <th className="ck-col-action" />
               </tr>
             </thead>
             <tbody>
               {filtered.map(item => (
-                <>
-                  <tr
-                    key={item.id}
-                    className={`check-row ${expandedId === item.id ? 'check-row-expanded' : ''}`}
-                    onClick={() => handleExpand(item)}
-                  >
-                    <td>
-                      <div className="check-title">{item.title}</div>
-                      {item.frameworks.length > 0 && (
-                        <div className="check-frameworks">
-                          {item.frameworks.slice(0, 3).map(f => (
-                            <span key={f} className="framework-tag">{f}</span>
-                          ))}
-                          {item.frameworks.length > 3 && (
-                            <span className="framework-tag framework-more">+{item.frameworks.length - 3}</span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="check-category">{item.category}</td>
-                    <td><span className={`badge ${priorityBadgeClass(item.priority)}`}>{item.priority}</span></td>
-                    <td className="check-owner">{item.owner}</td>
-                    <td><span className={`ck-badge ${statusBadgeClass(item.status)}`}>{STATUS_LABELS[item.status]}</span></td>
-                    <td className="check-due">
-                      {item.dueDate
-                        ? <span className={new Date(item.dueDate) < new Date() && item.status !== 'passed' ? 'due-overdue' : 'due-date'}>
-                            {new Date(item.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          </span>
-                        : <span className="text-muted">—</span>
-                      }
-                    </td>
-                  </tr>
-                  {expandedId === item.id && (
-                    <tr key={`${item.id}-detail`} className="check-detail-row">
-                      <td colSpan={6}>
-                        <div className="check-detail">
-                          <p className="check-desc">{item.description}</p>
-                          <div className="check-edit-row">
-                            <div className="check-edit-field">
-                              <label className="form-label">Status</label>
-                              <select
-                                className="filter-select"
-                                value={draftStatus}
-                                onChange={e => setDraftStatus(e.target.value as CheckStatus)}
-                                onClick={e => e.stopPropagation()}
-                              >
-                                <option value="passed">Passed</option>
-                                <option value="failed">Failed</option>
-                                <option value="warning">Warning</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="na">N/A</option>
-                              </select>
-                            </div>
-                            <div className="check-edit-field check-edit-notes">
-                              <label className="form-label">Notes</label>
-                              <textarea
-                                className="check-notes-input"
-                                value={draftNotes}
-                                onChange={e => setDraftNotes(e.target.value)}
-                                onClick={e => e.stopPropagation()}
-                                rows={2}
-                                placeholder="Add notes..."
-                              />
-                            </div>
-                            <div className="check-edit-actions">
-                              <button
-                                className="primary-btn"
-                                onClick={e => { e.stopPropagation(); handleSave(item.id) }}
-                              >
-                                Save
-                              </button>
-                              <button
-                                className="secondary-btn"
-                                onClick={e => { e.stopPropagation(); setExpandedId(null) }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
+                <tr key={item.id} className={selected.has(item.id) ? 'check-row-selected' : ''}>
+                  <td onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="ck-checkbox"
+                      checked={selected.has(item.id)}
+                      onChange={() => toggleSelect(item.id)}
+                    />
+                  </td>
+                  <td>
+                    <div className="check-title">{item.title}</div>
+                    {item.notes && (
+                      <div className="check-notes-preview">{item.notes}</div>
+                    )}
+                    {item.frameworks.length > 0 && (
+                      <div className="check-frameworks">
+                        {item.frameworks.slice(0, 3).map(f => (
+                          <span key={f} className="framework-tag">{f}</span>
+                        ))}
+                        {item.frameworks.length > 3 && (
+                          <span className="framework-tag framework-more">+{item.frameworks.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="check-category">{item.category}</td>
+                  <td>
+                    <span className={`badge ${priorityBadgeClass(item.priority)}`}>{item.priority}</span>
+                  </td>
+                  <td className="check-owner">{item.owner || <span className="text-muted">—</span>}</td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <div className={`ck-status-wrap ${statusWrapClass(item.status)}`}>
+                      <select
+                        className="ck-status-select"
+                        value={item.status}
+                        onChange={e => handleInlineStatus(item.id, e.target.value as CheckStatus)}
+                      >
+                        <option value="passed">Passed</option>
+                        <option value="failed">Failed</option>
+                        <option value="warning">Warning</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="na">N/A</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td className="check-due">
+                    {item.dueDate
+                      ? <span className={new Date(item.dueDate) < new Date() && item.status !== 'passed' ? 'due-overdue' : 'due-date'}>
+                          {new Date(item.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+                      : <span className="text-muted">—</span>
+                    }
+                  </td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <button className="ck-edit-btn" onClick={() => setPanel(item)} title="Edit">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* Edit / create panel */}
+      {panel !== false && (
+        <EditPanel
+          item={panel}
+          onSave={handlePanelSave}
+          onDelete={handlePanelDelete}
+          onClose={() => setPanel(false)}
+        />
+      )}
     </div>
   )
 }
