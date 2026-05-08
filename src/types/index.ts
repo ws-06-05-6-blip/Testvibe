@@ -50,6 +50,7 @@ export interface CI {
   serialNumber?: string
   assetTag?: string
   warrantyExpiry?: string
+  eolDate?: string
   location: string
   lastSeen: string
   lastVulnScan?: string

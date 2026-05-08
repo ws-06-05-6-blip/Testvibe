@@ -121,6 +121,10 @@ export function AssetDetailPanel({ ci, onClose, onSelect }: AssetDetailPanelProp
               <><dt>Warranty Expiry</dt>
                 <dd className={warrantyCls(ci.warrantyExpiry)}>{ci.warrantyExpiry}</dd></>
             )}
+            {ci.eolDate && (
+              <><dt>End of Life</dt>
+                <dd className={warrantyCls(ci.eolDate)}>{ci.eolDate}</dd></>
+            )}
           </dl>
         </div>
 

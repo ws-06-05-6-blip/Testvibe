@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CI, VulnCount, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory } from '../types'
+import type { CI, VulnCount, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory, AssetType } from '../types'
 import { mockCIs } from '../data/mockData'
 import { CriticalityBadge, StatusBadge, EnvironmentBadge, PatchBadge } from './Badge'
 
@@ -8,6 +8,9 @@ interface AssetsViewProps {
 }
 
 const ALL = 'All'
+
+const ALL_TYPES: AssetType[] = Array.from(new Set(mockCIs.map(ci => ci.type))).sort() as AssetType[]
+const ALL_TEAMS: string[] = Array.from(new Set(mockCIs.map(ci => ci.team))).sort()
 
 type SortDir = 'asc' | 'desc'
 type SortCol = 'displayName' | 'type' | 'environment' | 'criticality' | 'status' | 'patchStatus' | 'risk' | 'owner' | 'lastSeen'
@@ -50,6 +53,8 @@ function sortCIs(list: CI[], col: SortCol, dir: SortDir): CI[] {
 export function AssetsView({ onSelect }: AssetsViewProps) {
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<AssetCategory | typeof ALL>(ALL)
+  const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
+  const [filterTeam, setFilterTeam] = useState<string | typeof ALL>(ALL)
   const [filterCriticality, setFilterCriticality] = useState<Criticality | typeof ALL>(ALL)
   const [filterEnvironment, setFilterEnvironment] = useState<Environment | typeof ALL>(ALL)
   const [filterStatus, setFilterStatus] = useState<AssetStatus | typeof ALL>(ALL)
@@ -64,6 +69,8 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
 
   const filtered = mockCIs.filter(ci => {
     if (filterCategory !== ALL && ci.category !== filterCategory) return false
+    if (filterType !== ALL && ci.type !== filterType) return false
+    if (filterTeam !== ALL && ci.team !== filterTeam) return false
     if (filterCriticality !== ALL && ci.criticality !== filterCriticality) return false
     if (filterEnvironment !== ALL && ci.environment !== filterEnvironment) return false
     if (filterStatus !== ALL && ci.status !== filterStatus) return false
@@ -90,6 +97,8 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
   function resetFilters() {
     setSearch('')
     setFilterCategory(ALL)
+    setFilterType(ALL)
+    setFilterTeam(ALL)
     setFilterCriticality(ALL)
     setFilterEnvironment(ALL)
     setFilterStatus(ALL)
@@ -99,6 +108,8 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
   const hasFilters =
     search !== '' ||
     filterCategory !== ALL ||
+    filterType !== ALL ||
+    filterTeam !== ALL ||
     filterCriticality !== ALL ||
     filterEnvironment !== ALL ||
     filterStatus !== ALL ||
@@ -133,6 +144,14 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
             <option value="Hardware">Hardware</option>
             <option value="Network">Network</option>
             <option value="Cloud">Cloud</option>
+          </select>
+          <select className="filter-select" value={filterType} onChange={e => setFilterType(e.target.value as AssetType | typeof ALL)}>
+            <option value={ALL}>All Types</option>
+            {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select className="filter-select" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}>
+            <option value={ALL}>All Teams</option>
+            {ALL_TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select className="filter-select" value={filterCriticality} onChange={e => setFilterCriticality(e.target.value as Criticality | typeof ALL)}>
             <option value={ALL}>All Criticality</option>
