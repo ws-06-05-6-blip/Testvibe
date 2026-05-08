@@ -1896,9 +1896,23 @@
 [data-theme="light"] .category-card-active  { background: #eff6ff; }
 [data-theme="light"] .profile-card.selected { background: #eff6ff; border-color: var(--accent); }
 
-/* stat-card critical/warn accent borders */
-[data-theme="light"] .stat-card-critical { border-color: rgba(220, 38, 38, 0.35); }
-[data-theme="light"] .stat-card-warn     { border-color: rgba(217, 119, 6, 0.35); }
+/* stat-cards: tinted bg + coloured left accent for severity */
+[data-theme="light"] .stat-card-critical {
+  background: #fef2f2;
+  border-color: rgba(220, 38, 38, 0.2);
+  box-shadow:
+    inset 3px 0 0 var(--crit),
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .stat-card-warn {
+  background: #fffbeb;
+  border-color: rgba(217, 119, 6, 0.2);
+  box-shadow:
+    inset 3px 0 0 var(--med),
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
 
 /* badge-neutral text */
 [data-theme="light"] .badge-neutral { color: #475569; }
