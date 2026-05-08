@@ -1831,9 +1831,26 @@
 [data-theme="light"] .filter-select:focus    { border-color: #94a3b8; }
 [data-theme="light"] .profile-card:hover     { border-color: #94a3b8; }
 
-/* Sidebar: slight shadow instead of a border-only look */
+/* Sidebar */
 [data-theme="light"] .sidebar {
-  box-shadow: 1px 0 0 #e2e8f0, 4px 0 12px rgba(15, 23, 42, 0.04);
+  background: #f4f7fb;
+  box-shadow: 1px 0 0 #dde3ed, 4px 0 12px rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] .sidebar-brand {
+  background: #eef2f9;
+  border-bottom-color: #dde3ed;
+}
+[data-theme="light"] .nav-item:hover {
+  background: #e8edf5;
+}
+[data-theme="light"] .nav-item.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 3px 0 0 #1d4ed8;
+}
+[data-theme="light"] .sidebar-footer {
+  background: #eef2f9;
+  border-top-color: #dde3ed;
 }
 
 /* Card depth via shadow (cards are now white-on-light-grey) */
@@ -1851,11 +1868,6 @@
   background: #f8fafc;
 }
 
-/* Nav active: blue-100 bg, blue-700 text */
-[data-theme="light"] .nav-item.active {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
 
 /* Score yellow is illegible on white */
 [data-theme="light"] .score-yellow                     { color: #b45309; }
