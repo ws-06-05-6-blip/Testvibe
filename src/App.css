@@ -1831,6 +1831,13 @@
 [data-theme="light"] .filter-select:focus    { border-color: #94a3b8; }
 [data-theme="light"] .profile-card:hover     { border-color: #94a3b8; }
 
+/* Header */
+[data-theme="light"] .header {
+  background: #eef2f9;
+  border-bottom-color: #dde3ed;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
 /* Sidebar */
 [data-theme="light"] .sidebar {
   background: #f4f7fb;
