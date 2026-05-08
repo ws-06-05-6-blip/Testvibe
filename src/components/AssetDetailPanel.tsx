@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import type { CI } from '../types'
-import { mockCIs } from '../data/mockData'
+import { useCIs } from '../data/store'
 import { CriticalityBadge, StatusBadge, EnvironmentBadge, PatchBadge, Badge } from './Badge'
 
 interface AssetDetailPanelProps {
   ci: CI
   onClose: () => void
   onSelect: (ci: CI) => void
+  onEdit: (ci: CI) => void
+  onDeleted: () => void
 }
 
 function warrantyCls(expiry: string): string {
@@ -17,12 +20,15 @@ function warrantyCls(expiry: string): string {
   return ''
 }
 
-export function AssetDetailPanel({ ci, onClose, onSelect }: AssetDetailPanelProps) {
+export function AssetDetailPanel({ ci, onClose, onSelect, onEdit, onDeleted }: AssetDetailPanelProps) {
+  const { cis, remove } = useCIs()
+  const [showConfirm, setShowConfirm] = useState(false)
+
   const dependencies = ci.dependencies
-    .map(id => mockCIs.find(c => c.id === id))
+    .map(id => cis.find(c => c.id === id))
     .filter((c): c is CI => c !== undefined)
 
-  const dependents = mockCIs.filter(c => c.dependencies.includes(ci.id))
+  const dependents = cis.filter(c => c.dependencies.includes(ci.id))
 
   const totalVulns =
     ci.vulnerabilities.critical +
@@ -31,6 +37,11 @@ export function AssetDetailPanel({ ci, onClose, onSelect }: AssetDetailPanelProp
     ci.vulnerabilities.low
 
   const isHardware = ci.category === 'Hardware' || ci.category === 'Network'
+
+  function handleDelete() {
+    remove(ci.id)
+    onDeleted()
+  }
 
   return (
     <>
@@ -55,7 +66,25 @@ export function AssetDetailPanel({ ci, onClose, onSelect }: AssetDetailPanelProp
             <EnvironmentBadge value={ci.environment} />
             <Badge variant="neutral">{ci.type}</Badge>
           </div>
+          <div className="panel-actions">
+            <button className="secondary-btn btn-sm" onClick={() => onEdit(ci)}>Edit</button>
+            <button className="del-btn-text" onClick={() => setShowConfirm(s => !s)}>Delete</button>
+          </div>
         </div>
+
+        {/* Delete confirmation */}
+        {showConfirm && (
+          <div className="delete-confirm">
+            <div className="delete-confirm-title">Delete this asset?</div>
+            <p className="delete-confirm-desc">
+              <strong>{ci.displayName}</strong> will be permanently removed from the CMDB.
+            </p>
+            <div className="delete-confirm-actions">
+              <button className="secondary-btn btn-sm" onClick={() => setShowConfirm(false)}>Cancel</button>
+              <button className="del-btn" onClick={handleDelete}>Delete</button>
+            </div>
+          </div>
+        )}
 
         {/* Alert note */}
         {ci.notes && (

@@ -1,16 +1,14 @@
-import { useState } from 'react'
-import type { CI, VulnCount, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory, AssetType } from '../types'
-import { mockCIs } from '../data/mockData'
+import { useState, useMemo } from 'react'
+import type { CI, VulnCount, Criticality, AssetStatus, Environment, PatchStatus, AssetCategory } from '../types'
+import { useCIs } from '../data/store'
 import { CriticalityBadge, StatusBadge, EnvironmentBadge, PatchBadge } from './Badge'
 
 interface AssetsViewProps {
   onSelect: (ci: CI) => void
+  onAdd: () => void
 }
 
 const ALL = 'All'
-
-const ALL_TYPES: AssetType[] = Array.from(new Set(mockCIs.map(ci => ci.type))).sort() as AssetType[]
-const ALL_TEAMS: string[] = Array.from(new Set(mockCIs.map(ci => ci.team))).sort()
 
 type SortDir = 'asc' | 'desc'
 type SortCol = 'displayName' | 'type' | 'environment' | 'criticality' | 'status' | 'patchStatus' | 'risk' | 'owner' | 'lastSeen'
@@ -50,10 +48,11 @@ function sortCIs(list: CI[], col: SortCol, dir: SortDir): CI[] {
   })
 }
 
-export function AssetsView({ onSelect }: AssetsViewProps) {
+export function AssetsView({ onSelect, onAdd }: AssetsViewProps) {
+  const { cis, reset } = useCIs()
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<AssetCategory | typeof ALL>(ALL)
-  const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
+  const [filterType, setFilterType] = useState<string | typeof ALL>(ALL)
   const [filterTeam, setFilterTeam] = useState<string | typeof ALL>(ALL)
   const [filterCriticality, setFilterCriticality] = useState<Criticality | typeof ALL>(ALL)
   const [filterEnvironment, setFilterEnvironment] = useState<Environment | typeof ALL>(ALL)
@@ -61,13 +60,17 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
   const [filterPatch, setFilterPatch] = useState<PatchStatus | typeof ALL>(ALL)
   const [sortCol, setSortCol] = useState<SortCol>('criticality')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [resetPending, setResetPending] = useState(false)
+
+  const allTypes = useMemo(() => Array.from(new Set(cis.map(ci => ci.type))).sort(), [cis])
+  const allTeams = useMemo(() => Array.from(new Set(cis.map(ci => ci.team))).sort(), [cis])
 
   function handleSort(col: SortCol) {
     if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('desc') }
   }
 
-  const filtered = mockCIs.filter(ci => {
+  const filtered = cis.filter(ci => {
     if (filterCategory !== ALL && ci.category !== filterCategory) return false
     if (filterType !== ALL && ci.type !== filterType) return false
     if (filterTeam !== ALL && ci.team !== filterTeam) return false
@@ -115,13 +118,36 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
     filterStatus !== ALL ||
     filterPatch !== ALL
 
+  function handleReset() {
+    if (!resetPending) {
+      setResetPending(true)
+      setTimeout(() => setResetPending(false), 3000)
+    } else {
+      reset()
+      resetFilters()
+      setResetPending(false)
+    }
+  }
+
   return (
     <div className="assets-view">
       <div className="page-header">
         <h1 className="page-title">Assets</h1>
         <span className="page-subtitle">
-          {filtered.length} of {mockCIs.length} configuration items
+          {filtered.length} of {cis.length} configuration items
         </span>
+        <div className="page-header-actions">
+          <button
+            className={`ghost-btn${resetPending ? ' ghost-btn-warn' : ''}`}
+            onClick={handleReset}
+            title="Reset all asset data back to defaults"
+          >
+            {resetPending ? 'Click again to confirm' : 'Reset data'}
+          </button>
+          <button className="primary-btn btn-sm" onClick={onAdd}>
+            + Add Asset
+          </button>
+        </div>
       </div>
 
       <div className="filter-bar">
@@ -145,13 +171,13 @@ export function AssetsView({ onSelect }: AssetsViewProps) {
             <option value="Network">Network</option>
             <option value="Cloud">Cloud</option>
           </select>
-          <select className="filter-select" value={filterType} onChange={e => setFilterType(e.target.value as AssetType | typeof ALL)}>
+          <select className="filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
             <option value={ALL}>All Types</option>
-            {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select className="filter-select" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}>
             <option value={ALL}>All Teams</option>
-            {ALL_TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
+            {allTeams.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select className="filter-select" value={filterCriticality} onChange={e => setFilterCriticality(e.target.value as Criticality | typeof ALL)}>
             <option value={ALL}>All Criticality</option>

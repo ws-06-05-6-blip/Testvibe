@@ -1,5 +1,5 @@
 import type { CI } from '../types'
-import { mockCIs } from '../data/mockData'
+import { useCIs } from '../data/store'
 import { CriticalityBadge, PatchBadge } from './Badge'
 
 interface DashboardProps {
@@ -8,16 +8,18 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onViewAssets, onSelect }: DashboardProps) {
-  const totalCIs = mockCIs.length
-  const criticalAssets = mockCIs.filter(ci => ci.criticality === 'Critical').length
-  const totalCriticalVulns = mockCIs.reduce((sum, ci) => sum + ci.vulnerabilities.critical, 0)
-  const needsPatching = mockCIs.filter(ci => ci.patchStatus !== 'Up to date').length
+  const { cis } = useCIs()
 
-  const criticalCIs = mockCIs
+  const totalCIs = cis.length
+  const criticalAssets = cis.filter(ci => ci.criticality === 'Critical').length
+  const totalCriticalVulns = cis.reduce((sum, ci) => sum + ci.vulnerabilities.critical, 0)
+  const needsPatching = cis.filter(ci => ci.patchStatus !== 'Up to date').length
+
+  const criticalCIs = cis
     .filter(ci => ci.criticality === 'Critical')
     .sort((a, b) => b.vulnerabilities.critical - a.vulnerabilities.critical)
 
-  const patchRequired = mockCIs
+  const patchRequired = cis
     .filter(ci => ci.patchStatus === 'Critical patches' || ci.patchStatus === 'Patches available')
     .sort((a, b) => {
       if (a.patchStatus === 'Critical patches' && b.patchStatus !== 'Critical patches') return -1

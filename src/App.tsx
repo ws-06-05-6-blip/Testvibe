@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react'
 import type { CI, View } from './types'
+import { CIProvider } from './data/store'
 import { Sidebar } from './components/Sidebar'
 import { Dashboard } from './components/Dashboard'
 import { AssetsView } from './components/AssetsView'
 import { AssetDetailPanel } from './components/AssetDetailPanel'
+import { AssetForm } from './components/AssetForm'
 import { ScannerView } from './components/ScannerView'
 import { ChecklistView } from './components/ChecklistView'
 import './App.css'
 
 function App() {
+  return (
+    <CIProvider>
+      <AppInner />
+    </CIProvider>
+  )
+}
+
+function AppInner() {
   const [view, setView] = useState<View>('dashboard')
   const [selectedCI, setSelectedCI] = useState<CI | null>(null)
+  const [formTarget, setFormTarget] = useState<'new' | CI | null>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('secops-theme') as 'dark' | 'light' | null
     const initial = saved ?? 'dark'
@@ -35,6 +46,7 @@ function App() {
 
   function handleSelect(ci: CI) {
     setSelectedCI(ci)
+    setFormTarget(null)
   }
 
   function handleClosePanel() {
@@ -43,6 +55,15 @@ function App() {
 
   function handleViewAssets() {
     setView('assets')
+  }
+
+  function handleEdit(ci: CI) {
+    setFormTarget(ci)
+  }
+
+  function handleFormSaved(ci: CI) {
+    setFormTarget(null)
+    setSelectedCI(ci)
   }
 
   return (
@@ -90,7 +111,10 @@ function App() {
             <Dashboard onViewAssets={handleViewAssets} onSelect={handleSelect} />
           )}
           {view === 'assets' && (
-            <AssetsView onSelect={handleSelect} />
+            <AssetsView
+              onSelect={handleSelect}
+              onAdd={() => setFormTarget('new')}
+            />
           )}
           {view === 'scanner' && (
             <ScannerView />
@@ -100,8 +124,21 @@ function App() {
           )}
         </main>
       </div>
-      {selectedCI && (
-        <AssetDetailPanel ci={selectedCI} onClose={handleClosePanel} onSelect={handleSelect} />
+      {selectedCI && !formTarget && (
+        <AssetDetailPanel
+          ci={selectedCI}
+          onClose={handleClosePanel}
+          onSelect={handleSelect}
+          onEdit={handleEdit}
+          onDeleted={handleClosePanel}
+        />
+      )}
+      {formTarget !== null && (
+        <AssetForm
+          target={formTarget}
+          onClose={() => setFormTarget(null)}
+          onSaved={handleFormSaved}
+        />
       )}
     </div>
   )

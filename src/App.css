@@ -196,9 +196,42 @@
 
 .page-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   margin-bottom: 24px;
+}
+
+.page-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.ghost-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.ghost-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+}
+
+.ghost-btn-warn {
+  color: var(--med);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .page-title {
@@ -586,6 +619,99 @@
 .close-btn:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
+}
+
+/* Panel action bar (edit / delete) */
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Delete confirmation */
+.delete-confirm {
+  margin: 12px 20px 0;
+  padding: 14px 16px;
+  background: rgba(244, 63, 94, 0.06);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 8px;
+}
+
+.delete-confirm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--crit);
+  margin-bottom: 6px;
+}
+
+.delete-confirm-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Form overlay (higher z than detail panel) */
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 52;
+  backdrop-filter: blur(2px);
+}
+
+.form-panel {
+  z-index: 53;
+  width: 540px;
+}
+
+.form-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-col-2 {
+  grid-column: span 2;
+}
+
+.form-required {
+  color: var(--crit);
+}
+
+.form-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  font-size: 10px;
+}
+
+.form-textarea {
+  resize: vertical;
+  font-family: inherit;
 }
 
 .panel-notes {
@@ -1983,6 +2109,10 @@
 
   /* Page title area */
   .page-header { flex-wrap: wrap; }
+  .page-header-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+  .form-panel { width: 100%; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-col-2 { grid-column: span 1; }
 }
 
 /* ── Light theme overrides for hardcoded colours ── */
