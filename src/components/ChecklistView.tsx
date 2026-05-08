@@ -56,6 +56,26 @@ function generateId(): string {
   return `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
+function exportCSV(items: CheckItem[]) {
+  const esc = (v: string) =>
+    v.includes(',') || v.includes('"') || v.includes('\n')
+      ? `"${v.replace(/"/g, '""')}"`
+      : v
+
+  const headers = ['ID', 'Title', 'Description', 'Category', 'Priority', 'Status', 'Owner', 'Frameworks', 'Due Date', 'Notes']
+  const rows = items.map(i =>
+    [i.id, i.title, i.description, i.category, i.priority, i.status, i.owner,
+     i.frameworks.join('; '), i.dueDate ?? '', i.notes ?? '']
+      .map(v => esc(String(v))).join(',')
+  )
+  const csv = [headers.map(esc).join(','), ...rows].join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+  a.download = `security-checklist-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 // ── Edit / create panel ───────────────────────────────────────────────────────
 
 const BLANK: Omit<CheckItem, 'id'> = {
@@ -456,6 +476,12 @@ export function ChecklistView() {
           )}
           <span className="filter-count">{filtered.length} of {checks.length}</span>
           <div className="filter-spacer" />
+          <button className="secondary-btn ck-sm-btn" onClick={() => exportCSV(filtered)} title={`Export ${filtered.length} controls`}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Export CSV
+          </button>
           <button className="secondary-btn ck-sm-btn" onClick={handleResetDefaults}>Reset defaults</button>
         </div>
       </div>
