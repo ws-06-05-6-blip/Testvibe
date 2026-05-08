@@ -85,7 +85,7 @@ export const initialChecks: CheckItem[] = [
     priority: 'critical',
     status: 'passed',
     owner: 'David Kim',
-    frameworks: ['CIS 4.2', 'NIST SP 800-53 AC-2', 'PCI-DSS 8.2'],
+    frameworks: ['CIS 4.3', 'NIST SP 800-53 AC-2', 'PCI-DSS 8.2'],
   },
   {
     id: 'ia-03',
@@ -107,7 +107,7 @@ export const initialChecks: CheckItem[] = [
     priority: 'high',
     status: 'failed',
     owner: 'David Kim',
-    frameworks: ['CIS 4.1', 'ISO 27001 A.9.2.1'],
+    frameworks: ['CIS 16.9', 'ISO 27001 A.9.2.1'],
     dueDate: '2026-05-15',
     notes: 'Identified 12 stale accounts in last audit. Pending Q2 review completion.',
   },
@@ -218,7 +218,7 @@ export const initialChecks: CheckItem[] = [
     priority: 'high',
     status: 'passed',
     owner: 'Frank Lee',
-    frameworks: ['CIS 13.7', 'NIST SP 800-111', 'ISO 27001 A.10.1'],
+    frameworks: ['CIS 3.6', 'NIST SP 800-111', 'ISO 27001 A.10.1'],
   },
   {
     id: 'ep-04',
