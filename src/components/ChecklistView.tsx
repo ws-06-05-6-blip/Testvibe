@@ -70,7 +70,7 @@ function exportCSV(items: CheckItem[]) {
   )
   const csv = [headers.map(esc).join(','), ...rows].join('\n')
   const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
   a.download = `security-checklist-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
   URL.revokeObjectURL(a.href)
