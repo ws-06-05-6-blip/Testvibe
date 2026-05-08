@@ -23,6 +23,16 @@ function App() {
     localStorage.setItem('secops-theme', theme)
   }, [theme])
 
+  useEffect(() => {
+    const labels: Record<View, string> = {
+      dashboard: 'Dashboard',
+      assets: 'Assets',
+      scanner: 'Scanner',
+      checklist: 'Checklist',
+    }
+    document.title = `${labels[view]} — SecOps CMDB`
+  }, [view])
+
   function handleSelect(ci: CI) {
     setSelectedCI(ci)
   }
