@@ -1936,6 +1936,23 @@
 /* badge-neutral text */
 [data-theme="light"] .badge-neutral { color: #475569; }
 
+/* ── Assets / detail panel ──────────────────────── */
+
+/* Slide-over panel needs a shadow to lift off the dimmed page */
+[data-theme="light"] .panel {
+  box-shadow: -4px 0 24px rgba(15, 23, 42, 0.12);
+}
+
+/* Vuln count blocks: add depth so inactive (white) ones are visible */
+[data-theme="light"] .vuln-block {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+}
+
+/* Dependency / dependent cards: tinted bg so they read as cards */
+[data-theme="light"] .rel-item {
+  background: #f4f7fb;
+}
+
 /* ── Scanner ─────────────────────────────────────── */
 
 /* Pending badge uses #94a3b8 text — too faint on white */
