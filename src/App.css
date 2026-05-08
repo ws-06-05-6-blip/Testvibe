@@ -1738,3 +1738,70 @@
   font-size: 12px;
   color: var(--crit);
 }
+
+.ck-status-print { display: none; }
+
+/* ── Print / PDF ─────────────────────────────────── */
+
+@media print {
+  @page { size: A4 landscape; margin: 1.5cm; }
+
+  /* Flip CSS variables to light theme */
+  :root {
+    --bg-base:    #ffffff;
+    --bg-surface: #ffffff;
+    --bg-card:    #ffffff;
+    --bg-hover:   #f3f4f6;
+    --border:         #d1d5db;
+    --border-subtle:  #e5e7eb;
+    --text-primary:   #111827;
+    --text-secondary: #374151;
+    --text-muted:     #6b7280;
+  }
+
+  /* Hide all chrome */
+  .sidebar,
+  .header,
+  .category-grid,
+  .filter-bar,
+  .bulk-bar,
+  .ck-add-btn,
+  .ck-edit-btn,
+  .panel-overlay,
+  .panel { display: none !important; }
+
+  /* Fix layout */
+  .app   { display: block; }
+  .main  { display: block; width: 100%; }
+  .content { overflow: visible; padding: 16px 0; }
+
+  /* Summary bar: remove hover/click hints */
+  .checklist-summary { border-color: #d1d5db; cursor: default; }
+  .ck-sum-item { cursor: default; border-right-color: #d1d5db; }
+
+  /* Table: hide checkbox and edit-button columns */
+  .checklist-table th:first-child,
+  .checklist-table td:first-child,
+  .checklist-table th:last-child,
+  .checklist-table td:last-child { display: none; }
+
+  .data-table th { background: #f9fafb !important; }
+
+  /* Swap select for plain text in status cell */
+  .ck-status-select   { display: none; }
+  .ck-status-print    { display: inline; }
+  .ck-status-wrap     { padding-right: 7px; }
+  .ck-status-wrap::after { display: none; }
+
+  /* Let notes and frameworks wrap freely */
+  .check-notes-preview {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
+  }
+
+  /* Page-break rules */
+  thead  { display: table-header-group; }
+  tr     { page-break-inside: avoid; }
+}

@@ -6,6 +6,10 @@ const STORAGE_KEY = 'secops-checklist-state'
 
 const WEIGHTS: Record<CheckPriority, number> = { critical: 4, high: 3, medium: 2, low: 1 }
 
+const STATUS_LABELS: Record<CheckStatus, string> = {
+  passed: 'Passed', failed: 'Failed', warning: 'Warning', 'in-progress': 'In Progress', na: 'N/A',
+}
+
 const CATEGORIES: CheckCategory[] = [
   'Vulnerability Management',
   'Identity & Access',
@@ -476,6 +480,12 @@ export function ChecklistView() {
           )}
           <span className="filter-count">{filtered.length} of {checks.length}</span>
           <div className="filter-spacer" />
+          <button className="secondary-btn ck-sm-btn" onClick={() => window.print()} title="Print or save as PDF">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
+              <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Print / PDF
+          </button>
           <button className="secondary-btn ck-sm-btn" onClick={() => exportCSV(filtered)} title={`Export ${filtered.length} controls`}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -579,6 +589,7 @@ export function ChecklistView() {
                         <option value="in-progress">In Progress</option>
                         <option value="na">N/A</option>
                       </select>
+                      <span className="ck-status-print">{STATUS_LABELS[item.status]}</span>
                     </div>
                   </td>
                   <td className="check-due">
