@@ -61,7 +61,7 @@ function App() {
           </div>
           <div className="header-right">
             <span className="header-date">
-              {new Date('2026-05-06').toLocaleDateString('en-GB', {
+              {new Date().toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',

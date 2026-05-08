@@ -8,6 +8,7 @@ Usage:
 
 import asyncio
 import json
+import re
 import sqlite3
 import subprocess
 import uuid
@@ -161,6 +162,49 @@ def init_db() -> None:
                 cached_at TEXT NOT NULL
             );
         """)
+
+# ── Input validation ─────────────────────────────────────────────────────────
+
+# Matches a single nmap target token: IPv4, IPv4/CIDR, IPv4 octet-range, or hostname/FQDN.
+_SAFE_TARGET_PART = re.compile(
+    r'^(?:'
+    r'\d{1,3}(?:\.\d{1,3}){3}(?:/\d{1,2}|-\d{1,3})?'  # IPv4, CIDR, or range
+    r'|[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?'
+    r'(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*'  # hostname / FQDN
+    r')$'
+)
+
+_NVD_KEY_RE = re.compile(r'^[0-9a-fA-F\-]{32,72}$')
+
+_ALLOWED_SCAN_COLS = frozenset({
+    "status", "progress", "started_at", "completed_at",
+    "hosts_total", "hosts_scanned",
+    "vuln_critical", "vuln_high", "vuln_medium", "vuln_low",
+    "error",
+})
+
+
+def validate_target(target: str) -> None:
+    """Raise ValueError if target could inject nmap flags or shell commands."""
+    t = target.strip()
+    if not t:
+        raise ValueError("Target is required")
+    if len(t) > 512:
+        raise ValueError("Target too long (max 512 characters)")
+    for part in re.split(r'[\s,]+', t):
+        if not part:
+            continue
+        if part.startswith('-'):
+            raise ValueError(
+                f"Invalid target '{part}': must not start with '-' "
+                "(looks like an nmap flag)"
+            )
+        if not _SAFE_TARGET_PART.match(part):
+            raise ValueError(
+                f"Invalid target '{part}': expected an IP address, "
+                "CIDR range (e.g. 10.0.0.0/24), or hostname"
+            )
+
 
 # ── nmap scanning ─────────────────────────────────────────────────────────────
 
@@ -412,6 +456,9 @@ async def run_scan(
     scan_id: str, target: str, profile: str, nvd_api_key: str | None
 ) -> None:
     def update_scan(**kwargs: Any) -> None:
+        unknown = set(kwargs) - _ALLOWED_SCAN_COLS
+        if unknown:
+            raise ValueError(f"Unknown scan columns: {unknown}")
         cols = ", ".join(f"{k}=?" for k in kwargs)
         vals = list(kwargs.values()) + [scan_id]
         with db() as conn:
@@ -586,24 +633,36 @@ async def list_scans():
 async def create_scan(req: CreateScanRequest, background_tasks: BackgroundTasks):
     if req.profile not in SCAN_PROFILES:
         raise HTTPException(status_code=400, detail=f"Unknown profile: {req.profile}")
-    if not req.target.strip():
-        raise HTTPException(status_code=400, detail="Target is required")
-    if not req.name.strip():
+
+    name = req.name.strip()
+    if not name:
         raise HTTPException(status_code=400, detail="Name is required")
+    if len(name) > 200:
+        raise HTTPException(status_code=400, detail="Name too long (max 200 characters)")
+
+    try:
+        validate_target(req.target)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    if req.nvd_api_key is not None:
+        key = req.nvd_api_key.strip()
+        if key and not _NVD_KEY_RE.match(key):
+            raise HTTPException(status_code=400, detail="Invalid NVD API key format")
+        req.nvd_api_key = key or None
 
     scan_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
+    target = req.target.strip()
     with db() as conn:
         conn.execute(
             "INSERT INTO scans (id, name, target, profile, status, progress, created_at)"
             " VALUES (?, ?, ?, ?, 'pending', 0, ?)",
-            (scan_id, req.name.strip(), req.target.strip(), req.profile, now),
+            (scan_id, name, target, req.profile, now),
         )
 
-    background_tasks.add_task(
-        run_scan, scan_id, req.target.strip(), req.profile, req.nvd_api_key
-    )
+    background_tasks.add_task(run_scan, scan_id, target, req.profile, req.nvd_api_key)
     return {"id": scan_id, "status": "pending"}
 
 
